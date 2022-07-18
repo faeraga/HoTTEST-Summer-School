@@ -35,10 +35,10 @@ open import sums
 Prove
 ```agda
 uncurry : {A B X : Type} → (A → B → X) → (A × B → X)
-uncurry = {!!}
+uncurry f (a , b) = f a b
 
 curry : {A B X : Type} → (A × B → X) → (A → B → X)
-curry = {!!}
+curry f a b = f (a , b)
 ```
 You might know these functions from programming e.g. in Haskell.
 But what do they say under the propositions-as-types interpretation?
@@ -49,29 +49,35 @@ But what do they say under the propositions-as-types interpretation?
 Consider the following goals:
 ```agda
 [i] : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-[i] = {!!}
+[i] (inl (a , b)) = (inl a , inl b)
+[i] (inr c) = (inr c , inr c)
 
-[ii] : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-[ii] = {!!}
+[ii] : {A B C : Type} → (A ∔ C) × (B ∔ C) → (A × B) ∔ C
+[ii] (inl a , inl b) = inl (a , b)
+[ii] (_ , inr c) = inr c
+[ii] (inr c , _) = inr c
 
 [iii] : {A B : Type} → ¬ (A ∔ B) → ¬ A × ¬ B
-[iii] = {!!}
+[iii] f = (λ a → f (inl a)) , (λ b → f (inr b))
 
 [iv] : {A B : Type} → ¬ (A × B) → ¬ A ∔ ¬ B
-[iv] = {!!}
+[iv] f = {!!}
 
 [v] : {A B : Type} → (A → B) → ¬ B → ¬ A
-[v] = {!!}
+[v] f ¬b a = ¬b (f a)
+
+[fae] : {A B : Type} → ¬ (A × B) → A → ¬ B
+[fae] f a b = f (a , b)
 
 [vi] : {A B : Type} → (¬ A → ¬ B) → B → A
-[vi] = {!!}
+[vi] f b = {!!}
 
 [vii] : {A B : Type} → ((A → B) → A) → A
 [vii] = {!!}
 
 [viii] : {A : Type} {B : A → Type}
     → ¬ (Σ a ꞉ A , B a) → (a : A) → ¬ B a
-[viii] = {!!}
+[viii] p a b = p (a , b)
 
 [ix] : {A : Type} {B : A → Type}
     → ¬ ((a : A) → B a) → (Σ a ꞉ A , ¬ B a)
@@ -80,7 +86,7 @@ Consider the following goals:
 [x] : {A B : Type} {C : A → B → Type}
       → ((a : A) → (Σ b ꞉ B , C a b))
       → Σ f ꞉ (A → B) , ((a : A) → C a (f a))
-[x] = {!!}
+[x] f = (λ a → pr₁ (f a)) , λ a → pr₂ (f a)
 ```
 For each goal determine whether it is provable or not.
 If it is, fill it. If not, explain why it shouldn't be possible.
@@ -100,7 +106,7 @@ In the lecture we have discussed that we can't  prove `∀ {A : Type} → ¬¬ A
 What you can prove however, is
 ```agda
 tne : ∀ {A : Type} → ¬¬¬ A → ¬ A
-tne = {!!}
+tne ¬¬¬a a = ¬¬¬a (λ ¬a → ¬a a)
 ```
 
 
@@ -108,10 +114,20 @@ tne = {!!}
 Prove
 ```agda
 ¬¬-functor : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
-¬¬-functor = {!!}
+¬¬-functor f = [v] ([v] f)
+
+¬¬-functor' : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
+¬¬-functor' f ¬¬a ¬b = ¬¬a (λ a → ¬b (f a))
+
+thing : {A B : Type} → (¬ B → ¬ A) → ¬¬ A → ¬¬ B
+thing ¬b⇒¬a ¬¬a ¬b = ¬¬a (¬b⇒¬a ¬b)
+
 
 ¬¬-kleisli : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
-¬¬-kleisli = {!!}
+¬¬-kleisli a⇒¬¬b ¬¬a ¬b = ¬¬a (λ a → a⇒¬¬b a ¬b)
+
+¬¬-kleisli' : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
+¬¬-kleisli' = {!!}
 ```
 Hint: For the second goal use `tne` from the previous exercise
 
@@ -131,7 +147,8 @@ to a true proposition while an uninhabited type corresponds to a false propositi
 With this in mind construct a family
 ```agda
 bool-as-type : Bool → Type
-bool-as-type = {!!}
+bool-as-type true = 𝟙
+bool-as-type false = 𝟘
 ```
 such that `bool-as-type true` corresponds to "true" and
 `bool-as-type false` corresponds to "false". (Hint:
@@ -143,7 +160,7 @@ we have seen canonical types corresponding true and false in the lectures)
 Prove
 ```agda
 bool-≡-char₁ : ∀ (b b' : Bool) → b ≡ b' → (bool-as-type b ⇔ bool-as-type b')
-bool-≡-char₁ = {!!}
+bool-≡-char₁ b b (refl b) = id , id
 ```
 
 
@@ -152,7 +169,19 @@ bool-≡-char₁ = {!!}
 Using ex. 2, concldude that
 ```agda
 true≢false : ¬ (true ≡ false)
-true≢false = {!!}
+true≢false true≡false = true⇒false ⋆
+ where
+  true⇒false : 𝟙 → 𝟘
+  true⇒false = pr₁ (bool-≡-char₁ true false true≡false)
+
+true≢false' : ¬ (true ≡ false)
+true≢false' true≡false = {!𝟙≢𝟘 (ap bool-as-type true≡false)!}
+ where
+  𝟙≢𝟘 : ¬ (𝟙 → 𝟘)
+  𝟙≢𝟘 f = f ⋆
+
+
+
 ```
 You can actually prove this much easier! How?
 
@@ -162,7 +191,15 @@ You can actually prove this much easier! How?
 Finish our characterisation of `_≡_` by proving
 ```agda
 bool-≡-char₂ : ∀ (b b' : Bool) → (bool-as-type b ⇔ bool-as-type b') → b ≡ b'
-bool-≡-char₂ = {!!}
+bool-≡-char₂ true true _ = refl true
+bool-≡-char₂ true false (b→b' , _) = 𝟘-elim (b→b' ⋆)
+bool-≡-char₂ false true (_ , b'→b) = 𝟘-elim (b'→b ⋆)
+bool-≡-char₂ false false _ = refl false
+```
+
+```agda
+--bool-≡-char : (b b' : Bool) → b ≡ b' → (bool-as-type b ⇔ bool-as-type b')
+--bool-≡-char b b' = (bool-≡-char₁ , bool-≡-char₂)
 ```
 
 
@@ -176,5 +213,13 @@ has-bool-dec-fct A = Σ f ꞉ (A → A → Bool) , (∀ x y → x ≡ y ⇔ (f x
 Prove that
 ```agda
 decidable-equality-char : (A : Type) → has-decidable-equality A ⇔ has-bool-dec-fct A
-decidable-equality-char = {!!}
+pr₁ (decidable-equality-char A) = {!!}
+-- pr₁ of has-bool-dec is a function from A → A → Bool
+-- pr₂ of has-bool-dec is the proof that that function is equivalent
+-- to x ≡ y
+pr₂ (decidable-equality-char A) (pred , eq) x y with (pred x y)
+... | true =  inl {!(eq x y)!}
+... | false = inr {!!}
+
+    
 ```

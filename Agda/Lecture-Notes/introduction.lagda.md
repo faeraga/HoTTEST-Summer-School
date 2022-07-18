@@ -178,6 +178,15 @@ sym (refl x) = refl x
 
 ap : {A B : Type} (f : A → B) {x y : A} → x ≡ y → f x ≡ f y
 ap f (refl x) = refl (f x)
+
+ap' : {A B : Type} {x y : A} (f : A → B) → x ≡ y → f x ≡ f y
+ap' f (refl x) = refl (f x)
+
+ap'' : {A : Type} {x y : A} {B : Type} (f : A → B) → x ≡ y → f x ≡ f y
+ap'' f (refl x) = refl (f x)
+
+ap''' : (A B : Type) {x y : A} (f : A → B) → x ≡ y → f x ≡ f y
+ap''' A B f (refl x) = refl (f x)
 ```
 
 The identity type is a little bit subtle and there is a lot to say about it.

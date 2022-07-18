@@ -41,8 +41,8 @@ This means that we can produce an element of `A` or show that no such element ca
 Although it is not possible in general to write a program of type `¬¬ A → A`, this is possible when `A` is decidable:
 ```agda
 ¬¬-elim : {A : Type} → is-decidable A → ¬¬ A → A
-¬¬-elim (inl x) f = x
-¬¬-elim (inr g) f = 𝟘-elim (f g)
+¬¬-elim (inl a) ¬¬a = a
+¬¬-elim (inr ¬a) ¬¬a = 𝟘-elim (¬¬a ¬a)
 ```
 
 ## Decidable propositions as booleans
@@ -55,18 +55,18 @@ decidability-with-booleans : (A : Type) → is-decidable A ⇔ Σ b ꞉ Bool , (
 decidability-with-booleans A = f , g
  where
   f : is-decidable A → Σ b ꞉ Bool , (A ⇔ b ≡ true)
-  f (inl x) = true , (α , β)
+  f (inl a) = true , (α , β)
    where
     α : A → true ≡ true
     α _ = refl true
 
     β : true ≡ true → A
-    β _ = x
+    β _ = a
 
-  f (inr ν) = false , (α , β)
+  f (inr ¬a) = false , (α , β)
    where
     α : A → false ≡ true
-    α x = 𝟘-elim (ν x)
+    α a = 𝟘-elim (¬a a)
 
     β : false ≡ true → A
     β ()
