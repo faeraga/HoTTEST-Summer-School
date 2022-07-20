@@ -207,17 +207,48 @@ bool-≡-char₂ false false _ = refl false
 A type `A` is called *discrete* if it has decidable equality.
 Consider the following predicate on types:
 ```agda
+--data _∔_ (A B : Type) : Type where
+-- inl : A → A ∔ B
+-- inr : B → A ∔ B
+--
+--¬_ : Type → Type
+--¬ A = A → 𝟘
+
+is-decidable' : Type → Type
+is-decidable' A = A ∔ ¬ A
+
+has-decidable-equality' : Type → Type
+has-decidable-equality' X = (x y : X) → is-decidable' (x ≡ y)
+
 has-bool-dec-fct : Type → Type
 has-bool-dec-fct A = Σ f ꞉ (A → A → Bool) , (∀ x y → x ≡ y ⇔ (f x y) ≡ true)
 ```
+
 Prove that
 ```agda
 decidable-equality-char : (A : Type) → has-decidable-equality A ⇔ has-bool-dec-fct A
-pr₁ (decidable-equality-char A) = {!!}
+pr₁ (decidable-equality-char A) eq = pred , pred-is-bool-dec
+ where
+  dec-to-bool : {x y : A} → (x ≡ y) ∔ (x ≡ y → 𝟘) → Bool
+  dec-to-bool (inl _) = true
+  dec-to-bool (inr _) = false
+
+  pred : A → A → Bool
+  pred x y = dec-to-bool (eq x y)
+    
+  pred-x-x : {x : A} (d : is-decidable (x ≡ x)) → dec-to-bool d ≡ true
+  pred-x-x (inl _) = refl true
+  pred-x-x {x} (inr x≢x) = 𝟘-elim ((x≢x) (refl x))
+
+  pred-is-bool-dec : (x y : A) → x ≡ y ⇔ (pred x y ≡ true)
+  pr₁ (pred-is-bool-dec x x) (refl x) = pred-x-x (eq x x) 
+  pr₂ (pred-is-bool-dec x y) p with (eq x y)
+  ... | inl x=y = x=y
+  
 -- pr₁ of has-bool-dec is a function from A → A → Bool
 -- pr₂ of has-bool-dec is the proof that that function is equivalent
 -- to x ≡ y
-pr₂ (decidable-equality-char A) (pred , eq) x y with (pred x y)
+pr₂ (decidable-equality-char A) (pred , pred-dec) x y with (pred x y)
 ... | true =  inl {!(eq x y)!}
 ... | false = inr {!!}
 

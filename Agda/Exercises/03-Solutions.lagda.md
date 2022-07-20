@@ -228,12 +228,16 @@ Translate this definition into HoTT.
 ```agda
 is-lower-bound : (P : ℕ → Type) (n : ℕ) → Type
 is-lower-bound P n = (m : ℕ) → P m → n ≤₁ m
-```
 
-We define the type of minimal elements of a type family over the naturals.
-```agda
+is-lower-bound' : (P : ℕ → Type) (n : ℕ) → Type
+is-lower-bound' P n = Sigma ℕ λ m → P m → n ≤₁ m
+
+
 minimal-element : (P : ℕ → Type) → Type
-minimal-element P = Σ n ꞉ ℕ , (P n) × (is-lower-bound P n)
+minimal-element P = Sigma ℕ λ n → (P n) × (is-lower-bound P n)
+
+minimal-element' : (P : ℕ → Type) → Type
+minimal-element' P = (n : ℕ) → (P n) × (is-lower-bound P n)
 ```
 
 ### Exercise 8 (⋆)
