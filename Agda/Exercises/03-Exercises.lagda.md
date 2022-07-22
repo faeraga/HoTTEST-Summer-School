@@ -168,6 +168,7 @@ Note that `zero` was called `pt` and suc `i` on the HoTT exercise sheet.
 data Fin : ℕ → Type where
  zero : {n : ℕ} → Fin (suc n)
  suc  : {n : ℕ} → Fin n → Fin (suc n)
+
 ```
 
 ### Exercise 4 (⋆)
@@ -188,6 +189,8 @@ Fin-elim A a f (suc k) = f k Ak
 We give the other definition of the finite types and introduce some notation.
 
 ```agda
+
+
 Fin' : ℕ → Type
 Fin' 0       = 𝟘
 Fin' (suc n) = 𝟙 ∔ Fin' n
@@ -205,42 +208,34 @@ Prove that `Fin n` and `Fin' n` are isomorphic for every `n`.
 
 ```agda
 Fin-isomorphism : (n : ℕ) → Fin n ≅ Fin' n
-Fin-isomorphism n = record { bijection = f n ; bijectivity = f-is-bijection n }
+Fin-isomorphism n = record { bijection = f {n} ; bijectivity = f-is-bijection {n} }
  where
-  f : (n : ℕ) → Fin n → Fin' n
-  f (suc n) zero    = zero'
-  f (suc n) (suc k) = suc' (f n k) 
+  f : {n : ℕ} → Fin n → Fin' n
+  f zero    = zero'
+  f (suc k) = suc' (f k) 
 
-  g : (n : ℕ) → Fin' n → Fin n
-  g (suc n) (inl ⋆) = zero
-  g (suc n) (inr k) = suc (g n k)
+  g : {n : ℕ} → Fin' n → Fin n
+  g {suc n} (inl ⋆) = zero
+  g {suc n} (inr k) = suc (g k)
 
-  gf : (n : ℕ) → g n ∘ f n ∼ id
-  gf (suc n) zero    = refl zero
-  gf (suc n) (suc k) = γ
-   where
-    IH : g n (f n k) ≡ k
-    IH = gf n k
+  gf∼id : {n : ℕ} → g {n} ∘ f {n} ∼ id
+  gf∼id zero    = refl zero
+  gf∼id (suc k) =
+    g (f (suc k))  ≡⟨ refl _ ⟩
+    g (suc' (f k)) ≡⟨ refl _ ⟩
+    suc (g (f k))  ≡⟨ ap suc (gf∼id k) ⟩
+    suc k                                      ∎
 
-    γ = g (suc n) (f (suc n) (suc k)) ≡⟨ {!!} ⟩
-        g (suc n) (suc' (f n k))      ≡⟨ {!!} ⟩
-        suc (g n (f n k))             ≡⟨ {!!} ⟩
-        suc k                         ∎
+  fg∼id : {n : ℕ} → f {n} ∘ g {n} ∼ id
+  fg∼id {suc n} (inl ⋆) = refl (inl ⋆)
+  fg∼id {suc n} (inr k) =
+    f (g (suc' k))  ≡⟨ refl _ ⟩
+    f (suc (g k))   ≡⟨ refl _ ⟩
+    suc' (f (g k))  ≡⟨ ap suc' (fg∼id k) ⟩
+    suc' k                                      ∎
 
-  fg : (n : ℕ) → f n ∘ g n ∼ id
-  fg (suc n) (inl ⋆) = {!!}
-  fg (suc n) (inr k) = γ
-   where
-    IH : f n (g n k) ≡ k
-    IH = fg n k
-
-    γ = f (suc n) (g (suc n) (suc' k)) ≡⟨ {!!} ⟩
-        f (suc n) (suc (g n k))        ≡⟨ {!!} ⟩
-        suc' (f n (g n k))             ≡⟨ {!!} ⟩
-        suc' k                         ∎
-
-  f-is-bijection : (n : ℕ) → is-bijection (f n)
-  f-is-bijection n = record { inverse = g n ; η = gf n ; ε = fg n}
+  f-is-bijection : {n : ℕ} → is-bijection (f)
+  f-is-bijection {n} = record { inverse = g ; η = gf∼id ; ε = fg∼id {n} }
 ```
 
 ## Part IV -- minimal elements in the natural numbers
@@ -303,7 +298,10 @@ open import decidability
 The well-ordering principle reads
 ```agda
 Well-ordering-principle = (P : ℕ → Type) → (d : is-decidable-predicate P) → (n : ℕ) → P n → minimal-element P
+
+Well-ordering-principle' = (P : ℕ → Type) → (d : is-decidable-predicate P) → (Sigma ℕ (λ n → P n)) → minimal-element P
 ```
+
 
 We shall prove this statement via induction on `n`.
 In order to make the proof more readable, we first prove two lemmas.
@@ -314,15 +312,19 @@ What is the statement of `is-minimal-element-suc`
 under the Curry-Howard interpretation?
 Prove this lemma.
 
+For all decidable predicates `P` on the natural numbers, all m such that P accepts (suc m), all proofs that m is a lower bound for such integers, and all proofs that (P 0) is empty, we can produce a proof that (suc m) is a lower bound for P.
+
+If P is a decidable predicate on ℕ and n=m is the smallest value for which P(n+1) and P(0) is false, then n=m+1 is the smallest value for which P(n)
+
 ```agda
 is-minimal-element-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (m : ℕ) (pm : P (suc m))
-  (is-lower-bound-m : is-lower-bound (λ x → P (suc x)) m) →
-  ¬ (P 0) → is-lower-bound P (suc m)
-is-minimal-element-suc P d m pm is-lower-bound-m neg-p0 0 p0 = {!!}
-is-minimal-element-suc P d 0 pm is-lower-bound-m neg-p0 (suc n) psuccn = {!!}
-is-minimal-element-suc P d (suc m) pm is-lower-bound-m neg-p0 (suc n) psuccn = {!!}
+  {P : ℕ → Type} → ¬ (P 0) →
+  (m : ℕ) → P (suc m) →
+  is-lower-bound (λ x → P (suc x)) m →
+  is-lower-bound P (suc m)
+is-minimal-element-suc ¬p0 _ _ _ 0 p0 = ¬p0 p0
+is-minimal-element-suc _ 0 _ _ (suc _) _ = ⋆
+is-minimal-element-suc _ (suc m) _ suc-suc-m-is-lower-bound (suc n) p-n = suc-suc-m-is-lower-bound n p-n
 ```
 
 ### Exercise 10 (🌶)
@@ -331,14 +333,19 @@ What is the statement of `well-ordering-principle-suc`
 under the Curry-Howard interpretation?
 Prove this lemma.
 
+If P is a predicate on the natural numbers, and P' = n → P (n+1) has a minimal element,
+then P has a minimal element.
+
 ```agda
 well-ordering-principle-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (n : ℕ) (p : P (suc n)) →
-  is-decidable (P 0) →
+  (P : ℕ → Type) → (n : ℕ) → P (suc n) → is-decidable (P 0) →
   minimal-element (λ m → P (suc m)) → minimal-element P
-well-ordering-principle-suc P d n p (inl p0) _  = {!!}
-well-ordering-principle-suc P d n p (inr neg-p0) (m , (pm , is-min-m)) = {!!}
+well-ordering-principle-suc P _ _ (inl p0) _  = 0 , p0 , (λ m _ → ⋆)
+well-ordering-principle-suc P _ _ (inr ¬p0) (m , p'-m , m-is-min) = (suc m , p'-m , suc-m-is-min)
+ where
+  suc-m-is-min : is-lower-bound P (suc m)
+  suc-m-is-min zero p0 = ¬p0 p0
+  suc-m-is-min (suc k) p-suc-k = m-is-min k p-suc-k
 ```
 
 ### Exercise 11 (🌶)
@@ -346,8 +353,23 @@ well-ordering-principle-suc P d n p (inr neg-p0) (m , (pm , is-min-m)) = {!!}
 Use the previous two lemmas to prove the well-ordering principle
 ```agda
 well-ordering-principle : (P : ℕ → Type) → (d : is-decidable-predicate P) → (n : ℕ) → P n → minimal-element P
-well-ordering-principle P d 0 p = {!!}
-well-ordering-principle P d (suc n) p = well-ordering-principle-suc P d n p (d 0) {!!}
+well-ordering-principle _ _ 0 p0 = 0 , p0 , λ _ _ → ⋆
+well-ordering-principle P d (suc n) p-suc-n = P-min
+ where
+  P' : ℕ → Type
+  P' m = P (suc m)
+
+  d' : is-decidable-predicate P'
+  d' m = d (suc m)
+
+  P'-min : minimal-element P'
+  P'-min = well-ordering-principle P' d' n p-suc-n  
+
+  P'-min-to-P-min : minimal-element P' → minimal-element P
+  P'-min-to-P-min = well-ordering-principle-suc P n p-suc-n (d 0)
+
+  P-min = P'-min-to-P-min P'-min
+
 ```
 
 ### Exercise 12 (🌶)
@@ -355,13 +377,21 @@ well-ordering-principle P d (suc n) p = well-ordering-principle-suc P d n p (d 0
 Prove that the well-ordering principle returns 0 if `P 0` holds.
 
 ```agda
-is-zero-well-ordering-principle-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (n : ℕ) (p : P (suc n)) (d0 : is-decidable (P 0)) →
+{-is-zero-well-ordering-principle-suc :
+  (P : ℕ → Type) → is-decidable-predicate P →
+  (n : ℕ) → (p : P (suc n)) → (d0 : is-decidable (P 0)) →
   (x : minimal-element (λ m → P (suc m))) (p0 : P 0) →
-  (pr₁ (well-ordering-principle-suc P d n p d0 x)) ≡ 0
-is-zero-well-ordering-principle-suc P d n p (inl p0) x q0 = {!!}
-is-zero-well-ordering-principle-suc P d n p (inr np0) x q0 = {!!}
+  (pr₁ (well-ordering-principle-suc P n p d0 x)) ≡ 0
+is-zero-well-ordering-principle-suc P d n p (inl p0) x q0 = refl 0
+is-zero-well-ordering-principle-suc P d n p (inr np0) x q0 = 𝟘-elim (np0 q0)-}
+
+is-zero-well-ordering-principle-suc :
+  (P : ℕ → Type) → is-decidable-predicate P →
+  (n : ℕ) → (p : P (suc n)) → (d0 : is-decidable (P 0)) →
+  (x : minimal-element (λ m → P (suc m))) → (p0 : P 0) →
+  (pr₁ (well-ordering-principle-suc P n p d0 x)) ≡ 0
+is-zero-well-ordering-principle-suc P d n p-suc-n (inl p0) x q0 = refl 0
+is-zero-well-ordering-principle-suc P d n p-suc-n (inr ¬p0) x p0 = 𝟘-nondep-elim (¬p0 p0)
 
 is-zero-well-ordering-principle :
   (P : ℕ → Type) (d : is-decidable-predicate P) →
@@ -369,5 +399,14 @@ is-zero-well-ordering-principle :
   P 0 →
   pr₁ (well-ordering-principle P d n pn) ≡ 0
 is-zero-well-ordering-principle P d 0 p p0 = refl 0
-is-zero-well-ordering-principle P d (suc m) pm = is-zero-well-ordering-principle-suc P d m pm (d 0) {!!}
+is-zero-well-ordering-principle P d (suc m) pm = is-zero-well-ordering-principle-suc P d m pm (d 0) min-P'
+ where
+  P' : ℕ → Type
+  P' n = P (suc n)
+
+  d' : is-decidable-predicate P'
+  d' n = d (suc n)
+  
+  min-P' : minimal-element P'
+  min-P' = well-ordering-principle P' d' m pm 
 ```
